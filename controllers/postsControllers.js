@@ -1,19 +1,76 @@
 import mongoose from "mongoose";
 import PostMessage from "../models/postMessage.js"
+import UserModel from '../models/user.js'
 
-export const getAllPosts = async (req,res) => {
+
+export const getAllPosts = async(req,res) =>{
     try {
-        const postMessages = await PostMessage.find();
-        res.status(200).json(postMessages)
+        const posts = await PostMessage.find();
+        res.status(200).json(posts)
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+export const getPost = async (req,res) => {
+    const { id } = req.params;
+
+    try {
+        const post = await PostMessage.findById(id);
+        res.status(200).json(post)
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+export const getAllPostsPerPage = async (req,res) => { //for paginate
+    const { page } = req.query;
+
+    try {
+            const LIMIT = 8; //a number of choice to display posts per page
+            const startIndex = (Number(page) - 1) * LIMIT; //get the starting index of every page
+            const total = await PostMessage.countDocuments({})//in order to know the number of pages and the last page we can scroll to 
+            const posts = await PostMessage.find().sort({_id:-1}).limit(LIMIT).skip(startIndex);
+            //the .sort takes an object with the key to sort with and value -1 or 1 either asc or desc
+            //the limit limits the number of posts returned
+            //the .skip skips a certain number of documents and in this case it is the number of posts in the previous page
+            res.status(200).json({data: posts, currentPage: Number(page), numberOfPages: Math.ceil(total/LIMIT)})
     } catch (error) {
         res.status(404).json({message: error.message})        
     }
 }
 
+
+export const search = async (req,res) => {
+    const { userSearch, postSearch, tags } = req.query;
+    try {
+        const userArray = userSearch.split(',');
+        if(userArray.length === 1){
+            const regex = new RegExp(`^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$`,'ig');
+            const users = await UserModel.find({ $or: [ { firstName: regex } , { lastName: regex } ] });
+            if(!users) return res.json({data: 'No Users Found!'})
+            res.json({ data:users })
+        }else if(userArray.length > 1){
+                const firstNameRegex = new RegExp(`(^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$)|(^${userArray[1][0]}[a-z]+${userArray[1][userArray[1].length-1]}[a-z]*$)`, 'ig')
+                const lastNameRegex = new RegExp(`(^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$)|(^${userArray[1][0]}[a-z]+${userArray[1][userArray[1].length-1]}[a-z]*$)`, 'ig')
+                const users = await UserModel.find({ $or: [ { firstName: firstNameRegex } , { lastName: lastNameRegex } ] });
+                if(!users) return res.json({data: 'No Users Found!'})
+                res.json({ data:users })
+
+        }else{
+            const title = new RegExp(postSearch, 'i');
+            const posts = await PostMessage.find({ $or: [ { title }, { tags: { $in: tags.split(',') } } ]})
+    
+            res.json({ data:posts })
+        }
+    } catch (error) {
+        res.status(404).json({message: error.message})
+    }
+}
+
 export const createPost = async (req,res) => {
-    console.log(req.body)
     const post = req.body;
-    const newPost = new PostMessage({...post, creator: req.userId, createdAt: new Date().toISOString()})
+    const newPost = new PostMessage(post)
     
     try {
         await newPost.save()
@@ -64,5 +121,30 @@ export const likePost = async (req, res) => {
     }
 
     const updatedPost = await PostMessage.findByIdAndUpdate(id, post, {new:true});
+    res.status(200).json(updatedPost);
+}
+
+export const commentOnPost = async(req,res) => {
+    const { comment } = req.body;
+    const { id } = req.params;
+    const date = new Date()
+    try {
+        if(!req.userId) return res.status(404).json({message: 'Unauthenticated'});
+        const oldPost = await PostMessage.findById(id)
+        const userDetails = await UserModel.findById(req.userId);
+        oldPost.comments.push({ byId:req.userId ,byName: `${userDetails.firstName} ${userDetails.lastName}`, comment: comment, createdAt: date, picture: userDetails.picture })
+        const updatedPost = await PostMessage.findByIdAndUpdate(id, { comments: oldPost.comments }, {new:true});
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+export const deleteComment = async(req,res) => {
+    const { commentId } = req.body;
+    const { id } = req.params;
+    const post = await PostMessage.findById(id);
+    const comments = post.comments.filter(obj => !obj._id.equals(commentId) );
+    const updatedPost = await PostMessage.findByIdAndUpdate(id, {comments: comments}, {new:true});
     res.status(200).json(updatedPost);
 }
