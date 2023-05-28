@@ -6,9 +6,9 @@ import PostMessage from '../models/postMessage.js'
 
 export const signin = async(req,res)=>{
     const { email, password } = req.body;
-    
     try {
         const existingUser = await UserModel.findOne({email})
+
         if(!existingUser) return res.status(404).json({message: 'User not found!'})
 
         const isPasswordCorrect = bcrypt.compareSync(password, existingUser.password);
@@ -66,12 +66,26 @@ export const googleSignIn = async(req,res) => {
 
     try {
         const existingUser = await UserModel.findOne({email});
-        if(existingUser) return res.status(200).json(existingUser);
-
+        if(existingUser) {
+            const loggedUser = {...existingUser._doc};
+            Object.keys(loggedUser).forEach(key => {
+                if(key === 'friends' || key === 'requests'){
+                    delete loggedUser[key];
+                }
+            })
+            const token = jwt.sign({email, id: existingUser._id}, 'test', {expiresIn: '1h'})
+            return res.status(200).json([existingUser, token, loggedUser]);
+        }
         if(!existingUser){
             const newUser = await UserModel.create({firstName: given_name, lastName: family_name, email, password:'%G%O%O%G%L%E%A%C%C%O%U%N%T%',picture});
+            const loggedUser = {...newUser._doc};
+            Object.keys(loggedUser).forEach(key => {
+                if(key === 'friends' || key === 'requests'){
+                    delete loggedUser[key];
+                }
+            })
             const token = jwt.sign({email, id: newUser._id}, 'test', {expiresIn: '1h'})
-            return res.status(200).json([newUser, token]);
+            return res.status(200).json([existingUser, token, loggedUser]);
         }
     
 } catch (error) {
