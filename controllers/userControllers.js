@@ -9,11 +9,11 @@ export const signin = async(req,res)=>{
     try {
         const existingUser = await UserModel.findOne({email})
 
-        if(!existingUser) return res.status(404).json({message: 'User not found!'})
+        if(!existingUser) return res.status(200).json({message: 'User not found!'})
 
         const isPasswordCorrect = bcrypt.compareSync(password, existingUser.password);
 
-        if(!isPasswordCorrect) return res.status(404).json({ message: "Incorrect password."})
+        if(!isPasswordCorrect) return res.status(200).json({ message: "Incorrect password."})
 
         const token = jwt.sign({email: existingUser.email, id: existingUser._id}, 'test', {expiresIn: '1h'})
 
