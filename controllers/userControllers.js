@@ -9,11 +9,11 @@ export const signin = async(req,res)=>{
     try {
         const existingUser = await UserModel.findOne({email})
 
-        if(!existingUser) return res.status(200).json({error: 'User not found.'})
+        if(!existingUser) return res.status(409).json({error: 'User not found.'})
 
         const isPasswordCorrect = bcrypt.compareSync(password, existingUser.password);
 
-        if(!isPasswordCorrect) return res.status(200).json({error: "Incorrect password."})
+        if(!isPasswordCorrect) return res.status(409).json({error: "Incorrect password."})
 
         const token = jwt.sign({email: existingUser.email, id: existingUser._id}, 'test', {expiresIn: '1h'})
 
@@ -36,12 +36,12 @@ export const signup = async(req,res)=>{
     try {
         const existingUser = await UserModel.findOne({email});
 
-        if(existingUser) return res.status(200).json({error: 'Email already exist. Try a different email.'})
+        if(existingUser) return res.status(409).json({error: 'Email already exist. Try a different email.'})
         let passRegex = /(?=.*[A-Z])(?=.*[a-z])(?=.*[\d])(?=.*[._!@\-])[A-Za-z\d._!@\-]{8,}$/
         
-        if(!passRegex.test(password)) return res.status(200).json({error: 'Password should be at least 8 characters and contain at least one lowercase character, one upper case character, one number, and at least one special character (. _ ! @ -) '})
+        if(!passRegex.test(password)) return res.status(409).json({error: 'Password should be at least 8 characters and contain at least one lowercase character, one upper case character, one number, and at least one special character (. _ ! @ -) '})
        
-        if(password !== confirmPassword) return res.status(200).json({error: 'Passwords do not match'})
+        if(password !== confirmPassword) return res.status(409).json({error: 'Passwords do not match'})
 
         const salt = bcrypt.genSaltSync(10);
 
