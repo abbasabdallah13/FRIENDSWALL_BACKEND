@@ -40,29 +40,23 @@ export const getAllPostsPerPage = async (req,res) => { //for paginate
     }
 }
 
+export const getUserPosts = async(req,res) => {
+    const { id } = req.params;
+
+    try {
+        
+    } catch (error) {
+        
+    }
+}
+
 
 export const search = async (req,res) => {
-    const { userSearch, postSearch, tags } = req.query;
+    const { postSearch, tags } = req.query;
     try {
-        const userArray = userSearch.split(',');
-        if(userArray.length === 1){
-            const regex = new RegExp(`^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$`,'ig');
-            const users = await UserModel.find({ $or: [ { firstName: regex } , { lastName: regex } ] });
-            if(!users) return res.json({data: 'No Users Found!'})
-            res.json({ data:users })
-        }else if(userArray.length > 1){
-                const firstNameRegex = new RegExp(`(^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$)|(^${userArray[1][0]}[a-z]+${userArray[1][userArray[1].length-1]}[a-z]*$)`, 'ig')
-                const lastNameRegex = new RegExp(`(^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$)|(^${userArray[1][0]}[a-z]+${userArray[1][userArray[1].length-1]}[a-z]*$)`, 'ig')
-                const users = await UserModel.find({ $or: [ { firstName: firstNameRegex } , { lastName: lastNameRegex } ] });
-                if(!users) return res.json({data: 'No Users Found!'})
-                res.json({ data:users })
-
-        }else{
             const title = new RegExp(postSearch, 'i');
             const posts = await PostMessage.find({ $or: [ { title }, { tags: { $in: tags.split(',') } } ]})
-    
             res.json({ data:posts })
-        }
     } catch (error) {
         res.status(404).json({message: error.message})
     }

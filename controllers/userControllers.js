@@ -229,3 +229,24 @@ export const getFriendDetails = async(req,res) => {
         console.log(error.message)
     }
 }
+
+export const userSearch = async(req, res) => {
+    const { userSearch } = req.query;
+    try {
+        const userArray = userSearch.split(',');
+        if(userArray.length === 1){
+            const regex = new RegExp(`^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$`,'ig');
+            const users = await UserModel.find({ $or: [ { firstName: regex } , { lastName: regex } ] });
+            if(!users) return res.json({data: 'No Users Found!'})
+            res.json({ data: users })
+        }else if(userArray.length > 1){
+                const firstNameRegex = new RegExp(`(^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$)|(^${userArray[1][0]}[a-z]+${userArray[1][userArray[1].length-1]}[a-z]*$)`, 'ig')
+                const lastNameRegex = new RegExp(`(^${userArray[0][0]}[a-z]+${userArray[0][userArray[0].length-1]}[a-z]*$)|(^${userArray[1][0]}[a-z]+${userArray[1][userArray[1].length-1]}[a-z]*$)`, 'ig')
+                const users = await UserModel.find({ $or: [ { firstName: firstNameRegex } , { lastName: lastNameRegex } ] });
+                if(!users) return res.json({data: 'No Users Found!'})
+                res.json({ data: users })
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
