@@ -12,7 +12,7 @@ dotenv.config();
 app.use(bodyParser.json({ limit: "30mb", extended: true}))
 app.use(bodyParser.urlencoded({ limit: "30mb", extended: true}))
 
-app.use(cors({ origin: 'https://99c7-94-72-155-139.ngrok-free.app' })); //for development purposes 
+app.use(cors({ origin: 'https://99c7-94-72-155-139.ngrok-free.app', credentials: true })); //for development purposes 
 // app.use(cors());
 
 const PORT = process.env.PORT || 5000;
