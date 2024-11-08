@@ -40,13 +40,18 @@ export const getAllPostsPerPage = async (req,res) => { //for paginate
     }
 }
 
-export const getUserPosts = async(req,res) => {
+export const getFriendPostsByPage = async(req,res) => {
     const { id } = req.params;
-
+    const { page } = req.query;
     try {
-        
+        const limit = 3;
+        const startIndex = (Number(page) - 1) * limit;
+        const totalPosts = await PostMessage.countDocuments({creator: id}).exec();
+        const posts = await PostMessage.find({ creator: id }).sort({ _id: 1 }).limit(limit).skip(startIndex).exec();
+        res.status(200).json({ friendPosts: posts, currentPage: Number(page), numberOfPages: Math.ceil(totalPosts/limit) })
     } catch (error) {
-        
+        console.log(error);
+        res.status(404).json({message: error.message});        
     }
 }
 

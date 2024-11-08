@@ -69,7 +69,6 @@ export const googleSignIn = async(req,res) => {
 
     try {
         const existingUser = await UserModel.findOne({email});
-        console.log(existingUser)
         if(existingUser) {
             const loggedUser = {...existingUser._doc};
             Object.keys(loggedUser).forEach(key => {
@@ -93,7 +92,7 @@ export const googleSignIn = async(req,res) => {
         }
     
 } catch (error) {
-    console.log(error.message)
+    console.log(error)
 }
 }
 
@@ -104,7 +103,7 @@ export const getUserInfo = async(req,res) => {
         if(!user) return res.status(404).json({message: 'A user with this is ID does not exist'})
         return res.status(200).json(user)
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
     }
 }
 
@@ -114,7 +113,7 @@ export const getUserInfoByEmail = async(req,res) => {
         const user = await UserModel.findOne({email}); 
         return res.status(200).json(user)
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
     }
 }
 
@@ -135,7 +134,7 @@ export const updateUserInfo = async(req,res) => {
         const updatedUser = await UserModel.findByIdAndUpdate(id, user, {new:true});
         res.status(200).json(updatedUser)
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
     }
 }
 
@@ -164,7 +163,7 @@ export const unsendFriendRequest = async(req,res) => {
         await UserModel.findByIdAndUpdate(userId, {requests:requests})
         return res.status(200);
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
     }
 }
 
@@ -211,22 +210,17 @@ export const unfriend = async(req,res) => {
         const updatedUserB = await UserModel.findByIdAndUpdate(loggedUserId, { friends: friendsB }, {new:true});
         res.status(200).json(updatedUserB)
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
     }
 }
 
 export const getFriendDetails = async(req,res) => {
     const { id } = req.params;
-    const { page } = req.query;
     try {
-        const Limit = 4;
-        const startIndex = (Number(page)-1) * Limit;
-        const total = await PostMessage.find({creator: id}).countDocuments();
-        const posts = await PostMessage.find({creator: id}).sort({_id:-1}).limit(Limit).skip(startIndex);
-        const user = await UserModel.findById(id);
-        return res.status(200).json([user, {data: posts, currentPage: Number(page), numberOfPages: Math.ceil(total/Limit)}])    
+        const user = await UserModel.findById(id, 'firstName lastName email picture country bio').exec();
+        return res.status(200).json({ friendDetails: user })    
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
     }
 }
 
